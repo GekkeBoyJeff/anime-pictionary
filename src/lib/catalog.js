@@ -69,3 +69,15 @@ export const pickRandomFromCatalog = (catalog) => {
 /** Find a single entry by its MAL id. O(n) but the catalog is small enough. */
 export const findInCatalog = (catalog, malId) =>
     catalog.data.find((entry) => entry.mal_id === malId) ?? null;
+
+/**
+ * Preferred display title. AniList-provided English title wins if non-empty,
+ * otherwise we fall back to manami's primary title (usually romaji).
+ *
+ * Every UI surface that shows an anime title goes through this so switching
+ * conventions — or running without enrichment — happens in one place.
+ */
+export const displayTitle = (entry) => {
+    const english = entry?.title_english?.trim();
+    return english ? english : (entry?.title ?? "Onbekend");
+};

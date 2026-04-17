@@ -13,6 +13,19 @@
 const SEASONS = ["WINTER", "SPRING", "SUMMER", "FALL"];
 const SEASON_ORDER = new Map(SEASONS.map((s, i) => [s, i]));
 
+/*
+ * Type buckets. Users complained that movies (especially series spin-off
+ * movies like "Demon Slayer: Mugen Train") crowd the results when they're
+ * looking for the original series. Bucketing lets us default the search +
+ * swipe deck to "Series" but keep everything else reachable via the picker.
+ */
+export const TYPE_BUCKETS = {
+    series: { label: "Series", types: ["TV", "ONA"] },
+    film: { label: "Films", types: ["MOVIE"] },
+    all: { label: "Alles", types: ["TV", "ONA", "MOVIE", "OVA", "SPECIAL"] },
+};
+export const DEFAULT_TYPE_BUCKET = "series";
+
 /**
  * Which anime-season the given Date falls into. Used as the "now" upper
  * bound so we can drop future seasons from the dropdown — nobody picks
@@ -93,23 +106,43 @@ const norm = (s) => (s ?? "").toLowerCase().trim();
 
 /**
  * Apply the full filter pipeline. Pass only the filters you care about;
- * the rest default to "no constraint".
+ * the rest default to "no constraint" (except type, which defaults to
+ * `series` so drawers looking for Demon Slayer do not get hit with the
+ * Mugen Train Movie first).
+ *
+ * Results are ranked by popularity (AniList user count) descending so the
+ * series most viewers have actually added to their lists bubble to the top
+ * — otherwise niche spin-offs with matching substrings would crowd out the
+ * ones players recognise.
  *
  * @param {object} catalog           Already-loaded catalog object
  * @param {object} [opts]
  * @param {string} [opts.text]       Search text; splits on whitespace, all tokens must match.
  * @param {object} [opts.season]     { year, season } tuple
  * @param {string[]} [opts.genres]   List of tag names; entry must match ALL of them
+ * @param {string}   [opts.typeBucket]  "series" | "film" | "all"; default "series"
  * @param {number} [opts.limit]      Max results; default 60
  */
 export const filterCatalog = (catalog, opts = {}) => {
-    const { text, season, genres, limit = 60 } = opts;
+    const {
+        text,
+        season,
+        genres,
+        typeBucket = DEFAULT_TYPE_BUCKET,
+        limit = 60,
+    } = opts;
     const tokens = text ? norm(text).split(/\s+/).filter(Boolean) : [];
     const genreSet = genres?.length ? new Set(genres) : null;
+    const allowedTypes = new Set(
+        (TYPE_BUCKETS[typeBucket] ?? TYPE_BUCKETS[DEFAULT_TYPE_BUCKET]).types
+    );
 
-    const results = [];
+    const matches = [];
     for (const entry of catalog.data) {
-        // Seasonal filter — cheapest, check first.
+        // Type bucket filter — cheap, check first.
+        if (!allowedTypes.has(entry.type)) continue;
+
+        // Seasonal filter.
         if (season && (entry.year !== season.year || entry.season !== season.season)) {
             continue;
         }
@@ -127,11 +160,15 @@ export const filterCatalog = (catalog, opts = {}) => {
             if (!ok) continue;
         }
 
-        // Text filter — all tokens must appear in either title or one of the
-        // synonyms. This is a substring match rather than true fuzzy matching;
-        // for a curated catalog it's plenty.
+        // Text filter — all tokens must appear in the romaji title OR the
+        // AniList English title. Synonyms used to be included, but they
+        // contain every language (Italian, French, Chinese, Spanish,
+        // German…) which dragged in false positives like "Onigiri" matching
+        // "demon slayer" because its Chinese translation happens to be
+        // "Demon Slayer". Sticking to Japanese + English means AniList
+        // enrichment is doing the heavy lifting for English discovery.
         if (tokens.length > 0) {
-            const haystack = `${norm(entry.title)} ${(entry.synonyms ?? []).map(norm).join(" ")}`;
+            const haystack = `${norm(entry.title)} ${norm(entry.title_english)}`;
             let ok = true;
             for (const t of tokens) {
                 if (!haystack.includes(t)) {
@@ -142,11 +179,13 @@ export const filterCatalog = (catalog, opts = {}) => {
             if (!ok) continue;
         }
 
-        results.push(entry);
-        if (results.length >= limit) break;
+        matches.push(entry);
     }
 
-    return results;
+    // Rank by AniList popularity (null → 0 so unranked stays at the bottom).
+    matches.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+
+    return matches.slice(0, limit);
 };
 
 /**

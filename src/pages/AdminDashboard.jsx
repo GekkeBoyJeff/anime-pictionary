@@ -14,6 +14,7 @@ import { Content } from "../components/ui/Content.jsx";
 import { Link } from "../components/ui/Link.jsx";
 import { BackendStatus } from "../components/status/BackendStatus.jsx";
 import { DacLogo } from "../components/brand/DacLogo.jsx";
+import { displayTitle } from "../lib/catalog.js";
 import { useAuth } from "../hooks/useAuth.js";
 import { useCatalog } from "../hooks/useCatalog.js";
 import { CUSTOM_HINTS } from "../data/custom-hints.js";
@@ -102,8 +103,11 @@ export const AdminDashboard = () => {
         return map;
     }, [supabaseHints]);
 
-    // Limit to 12 results; filtering 10k entries on every keystroke is still
-    // fast but rendering 10k cards is not.
+    // Limit to 12 results; filtering 30k entries on every keystroke is still
+    // fast, but rendering 30k cards is not. Match against romaji title +
+    // AniList English title only (no synonyms — they're multilingual and
+    // drag in false positives). Sort by popularity so the 1M-tracked
+    // series beats the niche spin-off sharing a substring.
     const searchResults = useMemo(() => {
         if (catalog.status !== "ready") return [];
         const q = debouncedQuery.trim().toLowerCase();
@@ -111,13 +115,11 @@ export const AdminDashboard = () => {
         const matches = [];
         for (const entry of catalog.data.data) {
             const inTitle = entry.title?.toLowerCase().includes(q);
-            const inSyn = entry.synonyms?.some((s) => s.toLowerCase().includes(q));
-            if (inTitle || inSyn) {
-                matches.push(entry);
-                if (matches.length >= 12) break;
-            }
+            const inEnglish = entry.title_english?.toLowerCase().includes(q);
+            if (inTitle || inEnglish) matches.push(entry);
         }
-        return matches;
+        matches.sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+        return matches.slice(0, 12);
     }, [catalog.status, catalog.data, debouncedQuery]);
 
     if (auth.status === "loading") {
@@ -213,7 +215,7 @@ export const AdminDashboard = () => {
                                     ) : null}
                                     <div className="flex min-w-0 flex-col gap-0.5">
                                         <span className="truncate font-serif font-semibold text-sumi group-hover:text-spirit">
-                                            {entry.title}
+                                            {displayTitle(entry)}
                                         </span>
                                         <span className="text-xs text-muted">
                                             {entry.type}

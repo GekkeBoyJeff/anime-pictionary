@@ -12,8 +12,9 @@
  * three generic placeholder prompts so the round can proceed.
  */
 
-import { findInCatalog } from "./catalog.js";
+import { displayTitle, findInCatalog } from "./catalog.js";
 import { findCustomHint } from "../data/custom-hints.js";
+import { generateFallbackHints } from "./fallback-hints.js";
 import { supabase } from "./supabase.js";
 
 /**
@@ -49,11 +50,15 @@ const fetchSupabaseHint = async (malId) => {
 export const resolveHint = async (malId, catalog) => {
     const catalogEntry = findInCatalog(catalog, malId);
 
+    // Prefer the AniList English title if available — applies across all
+    // three source branches below.
+    const preferredTitle = catalogEntry ? displayTitle(catalogEntry) : null;
+
     const supabaseRow = await fetchSupabaseHint(malId);
     if (supabaseRow) {
         return {
             mal_id: supabaseRow.mal_id,
-            title: supabaseRow.title ?? catalogEntry?.title ?? "Onbekend",
+            title: preferredTitle ?? supabaseRow.title ?? "Onbekend",
             hints: [supabaseRow.hint_1, supabaseRow.hint_2, supabaseRow.hint_3],
             picture: catalogEntry?.picture ?? supabaseRow.image_url ?? null,
             tags: catalogEntry?.tags ?? [],
@@ -66,7 +71,7 @@ export const resolveHint = async (malId, catalog) => {
     if (baseline) {
         return {
             mal_id: baseline.mal_id,
-            title: catalogEntry?.title ?? baseline.title,
+            title: preferredTitle ?? baseline.title,
             hints: baseline.hints,
             picture: catalogEntry?.picture ?? null,
             tags: catalogEntry?.tags ?? [],
@@ -75,17 +80,14 @@ export const resolveHint = async (malId, catalog) => {
         };
     }
 
-    // Catalog-only fallback. Random picks often land here — we invent three
-    // generic prompts so the round can still proceed.
+    // Catalog-only fallback. Random picks often land here — derive contextual
+    // prompts from the entry's MAL tags so a "mecha + school" series doesn't
+    // get the same generic three as a "horror + supernatural" one.
     if (catalogEntry) {
         return {
             mal_id: catalogEntry.mal_id,
-            title: catalogEntry.title,
-            hints: [
-                "Een hoofdpersoon",
-                "Een wapen of signature item",
-                "De titel in Japanse kalligrafie",
-            ],
+            title: preferredTitle,
+            hints: generateFallbackHints(catalogEntry),
             picture: catalogEntry.picture,
             tags: catalogEntry.tags,
             year: catalogEntry.year,

@@ -7,6 +7,7 @@
  */
 
 import { cn } from "../../lib/cn.js";
+import { displayTitle } from "../../lib/catalog.js";
 
 export const SwipeCard = ({ entry, className, style, onPick, active = true, ...rest }) => (
     <article
@@ -40,7 +41,7 @@ export const SwipeCard = ({ entry, className, style, onPick, active = true, ...r
         <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 p-5 text-washi-soft">
             <div className="flex flex-col gap-1">
                 <h3 className="font-display text-3xl md:text-4xl leading-tight tracking-tight">
-                    {entry?.title ?? "…"}
+                    {entry ? displayTitle(entry) : "…"}
                 </h3>
                 <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-washi-soft/80">
                     {entry?.year ? <span>{entry.year}</span> : null}

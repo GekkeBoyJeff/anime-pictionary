@@ -54,6 +54,15 @@ export const Inspiratiescherm = () => {
     const [hintImageBuckets, setHintImageBuckets] = useState([[], [], []]);
     const [viewer, setViewer] = useState({ open: false, startIndex: 0 });
 
+    /*
+     * Hints stay hidden until the player decides they're ready — this gives
+     * the drawer a moment to compose themselves after walking on stage, and
+     * avoids accidentally spoiling the challenge when the screen is
+     * projected. Tapping "Toon hints" reveals the grid and unlocks the
+     * Start-timer CTA.
+     */
+    const [hintsRevealed, setHintsRevealed] = useState(false);
+
     useEffect(() => {
         if (catalog.status !== "ready") return;
         if (!Number.isFinite(malId)) {
@@ -71,8 +80,11 @@ export const Inspiratiescherm = () => {
                 }
                 setMerged(result);
                 setStatus("ready");
-                // Reset any previous images when switching anime.
+                // Reset any previous state when switching anime — fresh series
+                // means fresh image buckets AND a fresh hidden-until-revealed
+                // hint panel.
                 setHintImageBuckets([[], [], []]);
+                setHintsRevealed(false);
             })
             .catch(() => {
                 if (!cancelled) setStatus("missing");
@@ -186,45 +198,88 @@ export const Inspiratiescherm = () => {
                         60 sec
                     </span>
                 </div>
-                <ol className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
-                    {merged.hints.map((hint, index) => (
-                        <li
-                            key={hint}
-                            className="stagger-in flex flex-col gap-3 rounded-lg border border-sumi/15 bg-washi-soft p-4 shadow-(--shadow-card)"
-                            style={{ "--stagger-index": index }}
+
+                {hintsRevealed ? (
+                    <ol className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
+                        {merged.hints.map((hint, index) => (
+                            <li
+                                key={hint}
+                                className="stagger-in flex flex-col gap-3 rounded-lg border border-sumi/15 bg-washi-soft p-4 shadow-(--shadow-card)"
+                                style={{ "--stagger-index": index }}
+                            >
+                                <div className="flex items-baseline gap-3">
+                                    <span
+                                        aria-hidden
+                                        className="font-display text-3xl leading-none text-spirit/40"
+                                    >
+                                        {String(index + 1).padStart(2, "0")}
+                                    </span>
+                                    <span className="font-serif text-lg font-bold leading-snug text-sumi md:text-xl">
+                                        {hint}
+                                    </span>
+                                </div>
+                                <HintReferenceImages
+                                    animeTitle={merged.title}
+                                    hint={hint}
+                                    hintIndex={index}
+                                    onThumbClick={handleThumbClick}
+                                />
+                            </li>
+                        ))}
+                    </ol>
+                ) : (
+                    /*
+                     * Pre-reveal state — we render a placeholder card row with
+                     * the same shape as the real grid so the page layout does
+                     * not jump when the reveal happens. The card slots show
+                     * numbered sumi-ink labels ("01 / 02 / 03") as a teaser.
+                     */
+                    <div className="flex flex-col items-center gap-5">
+                        <ol
+                            aria-hidden
+                            className="grid w-full grid-cols-3 gap-3 md:gap-4"
                         >
-                            <div className="flex items-baseline gap-3">
-                                <span
-                                    aria-hidden
-                                    className="font-display text-3xl leading-none text-spirit/40"
+                            {[0, 1, 2].map((i) => (
+                                <li
+                                    key={i}
+                                    className="flex h-28 items-center justify-center rounded-lg border border-dashed border-sumi/20 bg-washi-soft/60 md:h-32"
                                 >
-                                    {String(index + 1).padStart(2, "0")}
-                                </span>
-                                <span className="font-serif text-lg font-bold leading-snug text-sumi md:text-xl">
-                                    {hint}
-                                </span>
-                            </div>
-                            <HintReferenceImages
-                                animeTitle={merged.title}
-                                hint={hint}
-                                hintIndex={index}
-                                onThumbClick={handleThumbClick}
-                            />
-                        </li>
-                    ))}
-                </ol>
+                                    <span className="font-display text-5xl leading-none text-spirit/25 md:text-6xl">
+                                        {String(i + 1).padStart(2, "0")}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+
+                        <Button
+                            variant="lantern"
+                            size="xl"
+                            onClick={() => setHintsRevealed(true)}
+                            className="w-full max-w-sm"
+                        >
+                            <span aria-hidden>👁️</span>
+                            Toon hints
+                        </Button>
+
+                        <p className="max-w-xs text-center text-xs text-muted">
+                            Tik zodra je klaar bent om te zien wat je tekent.
+                        </p>
+                    </div>
+                )}
             </section>
 
-            <div className="sticky bottom-4 z-10 flex justify-center md:bottom-6">
-                <Button
-                    variant="danger"
-                    size="xl"
-                    onClick={handleStart}
-                    className="w-full max-w-sm"
-                >
-                    Start 60 sec timer
-                </Button>
-            </div>
+            {hintsRevealed ? (
+                <div className="sticky bottom-4 z-10 flex justify-center md:bottom-6">
+                    <Button
+                        variant="danger"
+                        size="xl"
+                        onClick={handleStart}
+                        className="w-full max-w-sm"
+                    >
+                        Start 60 sec timer
+                    </Button>
+                </div>
+            ) : null}
 
             <ImageViewer
                 variant="gallery"

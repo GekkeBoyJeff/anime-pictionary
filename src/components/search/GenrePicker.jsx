@@ -95,12 +95,19 @@ export const GenrePicker = ({ genres, value, onChange, className }) => {
                 role="listbox"
                 aria-multiselectable
                 /*
-                 * Anchored to the right edge of the trigger because Genre is
-                 * typically the rightmost filter chip — letting the popover
-                 * grow leftward keeps it inside the viewport on mobile.
-                 * `max-w` caps it so it never pokes past either side.
+                 * Mobile: fixed bottom sheet — the filter row often wraps and
+                 * the Genre chip can end up at either edge, so anchoring to
+                 * the trigger clips half the time. Bottom sheet sidesteps the
+                 * whole problem and lands more ergonomically on a phone anyway.
+                 *
+                 * Desktop (md+): classic anchored dropdown aligned to the
+                 * trigger's right edge, since the filter row never wraps there.
                  */
-                className="absolute right-0 top-full mt-2 z-20 w-80 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-hidden rounded-md border border-sumi/15 bg-washi-soft shadow-(--shadow-pop)"
+                className={cn(
+                    "z-20 max-h-[70vh] overflow-hidden rounded-md border border-sumi/15 bg-washi-soft shadow-(--shadow-pop)",
+                    "fixed inset-x-3 bottom-4",
+                    "md:absolute md:inset-x-auto md:bottom-auto md:right-0 md:top-full md:mt-2 md:w-80 md:max-w-[calc(100vw-2rem)]"
+                )}
             >
                 {/* Sticky search + clear row */}
                 <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-sumi/10 bg-washi-soft/95 backdrop-blur p-2">

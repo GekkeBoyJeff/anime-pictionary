@@ -14,9 +14,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { cn } from "../../lib/cn.js";
-import { filterCatalog, getAllGenres, getAvailableSeasons } from "../../lib/filters.js";
+import { displayTitle } from "../../lib/catalog.js";
+import {
+    DEFAULT_TYPE_BUCKET,
+    filterCatalog,
+    getAllGenres,
+    getAvailableSeasons,
+} from "../../lib/filters.js";
 import { SeasonPicker } from "./SeasonPicker.jsx";
 import { GenrePicker } from "./GenrePicker.jsx";
+import { TypePicker } from "./TypePicker.jsx";
 
 // Small debounce hook scoped to this file so the search inputs stay fast
 // without shipping a utility library.
@@ -56,7 +63,7 @@ const ResultCard = ({ entry, onPick }) => (
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate font-serif font-semibold text-sumi group-hover:text-spirit">
-                {entry.title}
+                {displayTitle(entry)}
             </span>
             <span className="text-xs text-muted">
                 {entry.type}
@@ -77,11 +84,14 @@ export const AnimeSearch = ({ catalog, className }) => {
     const [text, setText] = useState("");
     const [season, setSeason] = useState(null);
     const [genres, setGenres] = useState([]);
+    const [typeBucket, setTypeBucket] = useState(DEFAULT_TYPE_BUCKET);
     const debouncedText = useDebounced(text, 160);
 
     const seasons = useMemo(() => getAvailableSeasons(catalog, 8), [catalog]);
     const allGenres = useMemo(() => getAllGenres(catalog), [catalog]);
 
+    // "Active" means user typed text, picked a season, or picked a genre.
+    // The type bucket alone doesn't count — it's always "set" by default.
     const hasActiveFilter =
         debouncedText.trim().length > 0 || season !== null || genres.length > 0;
 
@@ -91,9 +101,10 @@ export const AnimeSearch = ({ catalog, className }) => {
             text: debouncedText,
             season,
             genres,
+            typeBucket,
             limit: 36,
         });
-    }, [catalog, debouncedText, season, genres, hasActiveFilter]);
+    }, [catalog, debouncedText, season, genres, typeBucket, hasActiveFilter]);
 
     const handlePick = (malId) => setLocation(`/anime/${malId}`);
 
@@ -124,7 +135,8 @@ export const AnimeSearch = ({ catalog, className }) => {
                     />
                 </label>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    <TypePicker value={typeBucket} onChange={setTypeBucket} />
                     <SeasonPicker seasons={seasons} value={season} onChange={setSeason} />
                     <GenrePicker genres={allGenres} value={genres} onChange={setGenres} />
                 </div>

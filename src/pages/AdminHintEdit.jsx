@@ -18,7 +18,7 @@ import { Content } from "../components/ui/Content.jsx";
 import { DacLogo } from "../components/brand/DacLogo.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { useCatalog } from "../hooks/useCatalog.js";
-import { findInCatalog } from "../lib/catalog.js";
+import { displayTitle, findInCatalog } from "../lib/catalog.js";
 import { findCustomHint } from "../data/custom-hints.js";
 import { supabase, isSupabaseConfigured } from "../lib/supabase.js";
 
@@ -179,7 +179,7 @@ export const AdminHintEdit = () => {
                         {catalogEntry?.type ? ` · ${catalogEntry.type}` : ""}
                     </span>
                     <h1 className="font-display text-2xl leading-tight text-sumi md:text-3xl">
-                        {catalogEntry?.title ?? "Anime"}
+                        {catalogEntry ? displayTitle(catalogEntry) : "Anime"}
                     </h1>
                     {catalogEntry?.tags?.length ? (
                         <ul className="mt-1 flex flex-wrap gap-1">
