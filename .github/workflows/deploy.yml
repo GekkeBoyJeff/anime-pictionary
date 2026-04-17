@@ -13,10 +13,13 @@ permissions:
     pages: write
     id-token: write
 
-# One deploy at a time — a new push cancels a still-running older deploy.
+# Allow one concurrent deployment. `cancel-in-progress: false` matches
+# GitHub's own Pages template — we want in-flight deploys to finish instead
+# of being killed mid-upload (which can leave orphan artifacts that trip up
+# the next run's `deploy-pages` step with "multiple artifacts found").
 concurrency:
     group: pages
-    cancel-in-progress: true
+    cancel-in-progress: false
 
 jobs:
     build:
@@ -47,9 +50,15 @@ jobs:
                   VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
               run: npm run build
 
+            # Unique artifact name per attempt. Without this, clicking
+            # "Re-run failed jobs" uploads a second artifact with the same
+            # name as the first attempt's, and deploy-pages chokes on the
+            # duplicate. The default name would be "github-pages"; we suffix
+            # it with run_attempt (1, 2, 3…) so re-runs are always clean.
             - uses: actions/upload-pages-artifact@v3
               with:
                   path: dist
+                  name: github-pages-${{ github.run_attempt }}
 
     deploy:
         needs: build
@@ -60,3 +69,5 @@ jobs:
         steps:
             - id: deployment
               uses: actions/deploy-pages@v4
+              with:
+                  artifact_name: github-pages-${{ github.run_attempt }}
