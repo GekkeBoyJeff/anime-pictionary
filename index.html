@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="nl">
+    <head>
+        <meta charset="UTF-8" />
+        <!--
+            Zoom is disabled on purpose. The stage laptop and audience-held
+            phones should always see the app at 1:1 so hit targets stay in
+            their designed positions. maximum-scale + user-scalable together
+            cover Safari and Chrome respectively.
+        -->
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#f0e5ca" />
+        <meta
+            name="description"
+            content="Inspiratie-engine voor anime-pictionary op het AnimeCon 2026 podium."
+        />
+
+        <!--
+            Google Fonts: we mengen een Japanse display-schrift (Zen Kurenaido —
+            kalligrafisch, persoonlijk gevoel) met een rustige sans (Zen Kaku Gothic)
+            voor body-tekst. Geen Geist/Inter — die schreeuwen SaaS-template.
+        -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Zen+Kurenaido&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Shippori+Mincho:wght@600;800&display=swap"
+            rel="stylesheet"
+        />
+
+        <title>Anime Pictionary · Hidden Spirits Edition</title>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.jsx"></script>
+    </body>
+</html>

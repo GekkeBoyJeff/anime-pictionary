@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — Hidden Spirits × Dutch Anime Community palette.
+ *
+ * Direction:
+ *   - Background: washi-paper cream (warm, neither white nor grey)
+ *   - Ink:        deep aubergine (Hidden Spirits purple, printed on paper)
+ *   - Accent:     lantern amber (DAC warmth) + cherry blossom pink
+ *   - Alarm:      vermillion seal red for the timer's stress state
+ *
+ * Why OKLCH: perceptually uniform — equal L differences feel equal in
+ * brightness. Makes contrast tuning predictable instead of trial-and-error.
+ *
+ * Typography — three families, each with a role:
+ *   - Zen Kurenaido   → display (hand-lettered, personal)
+ *   - Shippori Mincho → headings (Japanese-rooted serif)
+ *   - Zen Kaku Gothic → body (clean, readable)
+ */
+@theme {
+    /* Paper + ink */
+    --color-washi: oklch(94.5% 0.03 85);
+    --color-washi-soft: oklch(97% 0.015 85);
+    --color-washi-deep: oklch(88% 0.04 85);
+
+    --color-sumi: oklch(22% 0.04 300);
+    --color-sumi-soft: oklch(36% 0.05 300);
+
+    /* Hidden Spirits aubergine */
+    --color-spirit: oklch(36% 0.16 310);
+    --color-spirit-bright: oklch(56% 0.22 310);
+    --color-spirit-glow: oklch(72% 0.18 310);
+
+    /* DAC lantern amber + cherry blossom pink */
+    --color-lantern: oklch(78% 0.16 70);
+    --color-lantern-deep: oklch(64% 0.18 50);
+    --color-sakura: oklch(82% 0.09 15);
+
+    /* Vermillion — stage stress */
+    --color-vermillion: oklch(58% 0.22 28);
+
+    /* Muted text */
+    --color-muted: oklch(42% 0.03 300);
+
+    /* Type families */
+    --font-display: "Zen Kurenaido", "Zen Kaku Gothic New", system-ui, sans-serif;
+    --font-serif: "Shippori Mincho", "Shippori Antique", "Noto Serif JP", serif;
+    --font-sans: "Zen Kaku Gothic New", system-ui, -apple-system, sans-serif;
+
+    /* Fluid type sizes */
+    --text-display: clamp(2.5rem, 1rem + 8vw, 6.5rem);
+    --text-hero: clamp(2rem, 0.75rem + 4.5vw, 4rem);
+    --text-section: clamp(1.375rem, 0.9rem + 2vw, 2rem);
+
+    /*
+     * Soft depth shadows — tuned so small cards feel "printed on the paper",
+     * not "stuck on with tape". The key is low-blur but well-offset shadow
+     * in the aubergine color at low alpha, which harmonises with the palette
+     * instead of fighting it.
+     */
+    --shadow-card: 0 1px 0 oklch(22% 0.04 300 / 0.04),
+        0 8px 20px -10px oklch(36% 0.16 310 / 0.18);
+    --shadow-card-hover: 0 2px 0 oklch(22% 0.04 300 / 0.06),
+        0 14px 28px -12px oklch(36% 0.16 310 / 0.28);
+    --shadow-pop: 0 2px 0 oklch(22% 0.04 300 / 0.05),
+        0 18px 40px -16px oklch(36% 0.16 310 / 0.3);
+}
+
+html {
+    background: var(--color-washi);
+    color: var(--color-sumi);
+    color-scheme: light;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /*
+     * Belt-and-braces zoom disable.
+     *   - `touch-action: manipulation` kills iOS double-tap-to-zoom without
+     *     blocking pinch on nested scrollers (the image viewer still works).
+     *   - `text-size-adjust: none` stops mobile browsers from auto-scaling
+     *     fonts on rotate — our clamp() typography already handles sizing.
+     */
+    touch-action: manipulation;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
+}
+
+body {
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    position: relative;
+    overflow-x: hidden;
+    background-image:
+        radial-gradient(
+            circle at 92% -5%,
+            oklch(82% 0.09 15 / 0.28),
+            transparent 45%
+        ),
+        radial-gradient(
+            circle at 5% 95%,
+            oklch(78% 0.16 70 / 0.22),
+            transparent 50%
+        );
+}
+
+/*
+ * Washi grain. Inline SVG keeps the request count at zero. Opacity is low so
+ * reading is never compromised.
+ */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.2  0 0 0 0 0.15  0 0 0 0 0.2  0 0 0 0.7 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+#root {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Shared focus ring — one place to tune. */
+@utility focus-ring {
+    outline: none;
+
+    &:focus-visible {
+        outline: 2px solid var(--color-spirit-bright);
+        outline-offset: 2px;
+        border-radius: 6px;
+    }
+}
+
+/* Reduced-motion: timer still counts; decorative motion collapses. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Brush-stroke highlight — wraps inline text to feel hand-painted. */
+.stroke {
+    position: relative;
+    display: inline-block;
+}
+.stroke::after {
+    content: "";
+    position: absolute;
+    left: -0.1em;
+    right: -0.1em;
+    bottom: -0.05em;
+    height: 0.3em;
+    background: var(--color-spirit);
+    opacity: 0.22;
+    transform: skewX(-6deg);
+    border-radius: 999px 0 999px 0;
+    z-index: -1;
+}
+
+/* Lantern sway — tiny rotation so it sits in the periphery, not center stage. */
+@keyframes sway {
+    0%, 100% { transform: rotate(-2deg); }
+    50% { transform: rotate(2deg); }
+}
+.sway {
+    transform-origin: top center;
+    animation: sway 6s ease-in-out infinite;
+}
+
+/* Skeleton shimmer for async images. Keeps the timer screen alive while
+   reference search results are still loading. */
+@keyframes skeleton-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+.skeleton {
+    background-color: var(--color-washi-deep);
+    background-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        oklch(97% 0.015 85 / 0.6) 50%,
+        transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+/* ----------------------------------------------------------------------------
+ * Polish animations.
+ * All additive — no existing motion removed. Every keyframe collapses under
+ * `prefers-reduced-motion` (see the guard above).
+ * -------------------------------------------------------------------------- */
+
+/* page-fade-in — rises 8px with opacity fade; applied to <main> on mount. */
+@keyframes page-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.page-fade-in {
+    animation: page-fade-in 320ms cubic-bezier(.2,.7,.2,1) both;
+}
+
+/* stagger-in — same motion, but callers add an inline `--stagger-index` var
+   which we multiply by 80ms for per-item delay. */
+@keyframes stagger-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.stagger-in {
+    animation: stagger-in 380ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: calc(var(--stagger-index, 0) * 80ms);
+}
+
+/* scale-in — used by the SwipeCard entering the peek slot after a queue swap
+   so a new card feels like it's arriving rather than popping in. */
+@keyframes scale-in {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.scale-in {
+    animation: scale-in 240ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+/* image-fade-in — swaps skeleton → image smoothly. Set via `data-loaded="true"`
+   on the <img> once the load event fires. */
+@keyframes image-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+img[data-loaded="true"] {
+    animation: image-fade-in 260ms ease-out both;
+}
+
+/* viewer-fade — ImageViewer backdrop + content entrance. */
+@keyframes viewer-backdrop-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+@keyframes viewer-content-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.viewer-backdrop {
+    animation: viewer-backdrop-in 180ms ease-out both;
+}
+.viewer-content {
+    animation: viewer-content-in 220ms cubic-bezier(.2,.7,.2,1) both;
+}
+
+/* count-tick — subtle 2px nudge every time the countdown renders a new second.
+   Keyed on the digit (React re-mount via key prop) rather than infinite loop. */
+@keyframes count-tick {
+    0%   { transform: translateY(-2px); opacity: 0.85; }
+    100% { transform: translateY(0);    opacity: 1; }
+}
+.count-tick {
+    animation: count-tick 160ms ease-out both;
+}

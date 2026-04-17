@@ -1,26 +1,33 @@
 {
-  "name": "anime-pictionary",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.2.4",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.4",
-    "tailwindcss": "^4",
-    "typescript": "^5"
-  }
+    "name": "anime-pictionary",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "description": "Inspiratie-engine voor AnimeCon stage-pictionary — Dutch Anime Community",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview --port 4173",
+        "catalog": "node scripts/build-catalog.mjs",
+        "lint": "eslint . --ext .js,.jsx"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.103.3",
+        "clsx": "^2.1.1",
+        "lucide-react": "^1.8.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "tailwind-merge": "^3.5.0",
+        "wouter": "^3.4.0"
+    },
+    "devDependencies": {
+        "@tailwindcss/vite": "^4.1.18",
+        "@vitejs/plugin-react": "^4.3.4",
+        "eslint": "^9.22.0",
+        "eslint-plugin-react": "^7.37.4",
+        "eslint-plugin-react-hooks": "^5.2.0",
+        "prettier": "^3.4.2",
+        "tailwindcss": "^4.1.18",
+        "vite": "^6.2.0"
+    }
 }
